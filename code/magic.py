@@ -1,0 +1,47 @@
+import pygame
+from settings import *
+from random import randint
+
+class MagicPlayer:
+    def __init__(self, animation_player):
+        self.animation_player = animation_player
+        try: self.sounds = {
+            "heal": pygame.mixer.Sound("audio/heal.wav"),
+            "flame": pygame.mixer.Sound("audio/flame.wav")
+            }
+        except: self.sounds = {
+            "heal": pygame.mixer.Sound("../audio/heal.wav"),
+            "flame": pygame.mixer.Sound("../audio/flame.wav")
+            }
+        self.sounds["heal"].set_volume(0.3 * volume)
+        self.sounds["flame"].set_volume(0.1 * volume)
+
+    def heal(self, player, strength, cost, groups):
+        if player.energy >= cost:
+            self.sounds["heal"].play()
+            player.health += strength
+            player.energy -= cost
+            player.health = min(player.health, player.stats["health"])
+            self.animation_player.create_particles("aura", player.rect.center, groups)
+            self.animation_player.create_particles("heal", player.rect.center + pygame.math.Vector2(0, -60), groups)
+
+    def flame(self, player, cost, groups):
+        if player.energy >= cost:
+            self.sounds["flame"].play()
+            player.energy -= cost
+
+            if player.status.split("_")[0] == "right":
+                direction = pygame.math.Vector2(1,0)
+            elif player.status.split("_")[0] == "left":
+                direction = pygame.math.Vector2(-1,0)
+            elif player.status.split("_")[0] == "up":
+                direction = pygame.math.Vector2(0,-1)
+            elif player.status.split("_")[0] == "down":
+                direction = pygame.math.Vector2(0, 1)
+
+            for i in range(1, 6):
+                position_offset = direction * i * TILESIZE
+                mro = TILESIZE // 4  # max_random_offset
+                random_offset = pygame.math.Vector2(randint(-mro, mro), randint(-mro, mro))
+                pos = player.rect.center + position_offset + random_offset
+                self.animation_player.create_particles("flame", pos, groups)
